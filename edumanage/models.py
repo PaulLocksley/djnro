@@ -22,8 +22,7 @@ from utils.functional import cached_property
 
 
 _VENUE_INFO_HELP_TEXT = _(
-    'IEEE 802.11-2012, clause 8.4.1.34 Venue Info. This is a pair of integers, '
-    'each between 0 and 255, separated with ",".'
+    'Categorisation of this place, per IEEE Std 802.11-2020 table 9-65'
 )
 
 def validate_venue_info(value):
@@ -279,8 +278,9 @@ get_ertype_number = partial(get_ertype_string, reverse=True) # pylint: disable=i
 RADPROTOS = get_namedtuple_choices(
     ('UDP', 'radius', 'traditional RADIUS over UDP'),
     # ('TCP', 'radius-tcp', 'RADIUS over TCP (RFC6613)'),
-     ('TLS', 'radius-tls', 'RADIUS over TLS (RFC6614)'),
+    ('TLS', 'radius-tls', 'RADIUS over TLS (RadSec, RFC6614)'),
     # ('DTLS', 'radius-dtls', 'RADIUS over datagram TLS (RESERVED)'),
+    ('TLSPSK', 'radius-psk', 'RADIUS over TLS (PSK)'), # should be radius-tlspsk, but fit within 12 chars
 )
 
 
@@ -539,6 +539,8 @@ class InstServer(models.Model):
 
     secret = models.CharField(max_length=80)
     proto = models.CharField(max_length=12, choices=RADPROTOS, default=RADPROTOS.UDP)
+    psk_identity = models.CharField(max_length=128, null=True, blank=True, help_text=_("Network Access Identifier (user@realm)"))
+    psk_key = models.CharField(max_length=80, null=True, blank=True, help_text='Randomly-generated string')
     ts = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -741,6 +743,8 @@ class ServiceLoc(models.Model):
     # TODO: multiple addresses can be specified [...] address in English is required
     address = fields.GenericRelation(Address_i18n)
     venue_info = models.CharField(
+        choices=get_choices_from_settings('VENUE_INFO'),
+        default='0,0',
         max_length=7,
         blank=True,
         validators=[validate_venue_info],
@@ -880,6 +884,8 @@ class InstitutionDetails(models.Model):
         help_text=_('The primary, registered domain name for your institution, eg. example.com.<br>This is used to derive the Operator-Name attribute according to RFC5580, par.4.1, using the REALM namespace.')
     )
     venue_info = models.CharField(
+        choices=get_choices_from_settings('VENUE_INFO'),
+        default='0,0',
         max_length=7,
         blank=True,
         validators=[validate_venue_info],
