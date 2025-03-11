@@ -64,12 +64,25 @@ NRO recipients for notifications:
 
 	NOTIFY_ADMIN_MAILS = ["mail1@example.com", "mail2@example.com"]
 
-Set your cache backend (if you want to use one). For production instances you can go with memcached. For development you can keep the provided dummy instance:
+Set your cache backend (if you want to use one). For production instances you can go with memcached or redis. For development you can keep the provided dummy instance. 
+
+- Memcached must be configured so it can store the complete kml file (1.5Mb~ currently).
+- Reddis requires the extra dependencies ```redis``` and ```hiredis```.
+
+MemCached:
 
     CACHES = {
         'default': {
-            'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+            'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
             'LOCATION': '127.0.0.1:11211',
+        }
+    }
+Redis:
+
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': 'redis://127.0.0.1:6379',
         }
     }
 
